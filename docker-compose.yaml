@@ -1,68 +1,51 @@
-# build docker compose for laravel app 
-# php 8.1 
+version: "3.9"
+services:
+  app:
+    build:
+      args:
+        user: nabil
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: travellist
+    container_name: travellist-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    ports:
+      - 8000:8000
+    volumes:
+      - ./:/var/www
+    networks:
+      - travellist
 
-version: '3.9'
-services: 
-    main:
-        build: 
-            context: .
-            dockerfile: Dockerfile
-        command: 'php artisan serve --host=0.0.0.0'
-        volumes:
-            - .:/app
-        ports:
-            - 8000:8000
-        depends_on: 
-            - db
-        networks:
-            - laravel
+  db:
+    image: mysql:8.0
+    container_name: travellist-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./docker-compose/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - travellist
+  
+  adminer:
+    image: adminer
+    container_name: travellist-adminer
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    networks:
+      - travellist
 
-
-
-# mysql v8.0.0 
-    db:
-        image: mysql:8.0
-        environment: 
-            MYSQL_DATABASE: main
-            MYSQL_USER: admin
-            MYSQL_ROOT: admin
-            MYSQL_PASSWORD: admin
-            MYSQL_ROOT_PASSWORD: root
-        volumes:
-            - ./storage/dbdata:/var/lib/mysql
-        ports:
-            - 3306:3306
-        networks:
-            - laravel
-      
-
-# Adminer to manage MySQL
-    adminer:
-        image: adminer
-        restart: always
-        ports:
-            - 8080:8080
-        networks:
-            - laravel
-
-# Docker volume for MySQL Data
 volumes:
-    dbdata:
+  mysql:
+    driver: local
 
-# Only Laravel, and Adminer are exposed to public network
 networks:
-    laravel:
-        driver: bridge
-        
-
-
-
-
-
-
-
-
-
-
-
-
+  travellist:
+    driver: bridge
